@@ -53,6 +53,33 @@ test.describe('Game Listing and Navigation', () => {
     });
   });
 
+  test('should filter the visible games by category and publisher', async ({ page }) => {
+    await test.step('Navigate to homepage and open filters', async () => {
+      await page.goto('/');
+      await expect(page.getByTestId('games-grid')).toBeVisible();
+    });
+
+    await test.step('Apply a category and publisher filter', async () => {
+      await page.getByRole('checkbox', { name: /^Strategy$/i }).check();
+      await page.getByRole('combobox', { name: /filter by publisher/i }).selectOption({ label: 'CodeForge Studios' });
+    });
+
+    await test.step('Verify the filtered game list matches the combined filters', async () => {
+      const matchingCard = page.locator('[data-testid="game-card"]').filter({ hasText: /DevOps Dominion/i });
+      const nonMatchingCard = page.locator('[data-testid="game-card"]').filter({ hasText: /Pipeline Conquest/i });
+
+      await expect(matchingCard).toBeVisible();
+      await expect(nonMatchingCard).toBeHidden();
+      await expect(page.getByTestId('games-filter-summary')).toContainText(/Showing 1 game/i);
+    });
+
+    await test.step('Clear filters and restore the full list', async () => {
+      await page.getByTestId('clear-filters').click();
+      await expect(page.locator('[data-testid="game-card"]').filter({ hasText: /DevOps Dominion/i })).toBeVisible();
+      await expect(page.locator('[data-testid="game-card"]').filter({ hasText: /Pipeline Conquest/i })).toBeVisible();
+    });
+  });
+
   test('should display game details with all required information', async ({ page }) => {
     await test.step('Navigate to specific game details page', async () => {
       await page.goto('/game/1');
